@@ -1,0 +1,18 @@
+[Frontend: Formulario Login/Register]
+         |
+         v
+[Backend: Rutas /api/auth/register o /api/auth/login]
+         |
+         v
+[Controladores (NO Passport)]
+   - register: crea usuario en DB
+   - login: valida contraseña con bcrypt
+         |
+         v
+[Genera JWT con user.id, email, rol, etc.]
+         |
+         v
+[Devuelve JWT al frontend]
+         |
+         v
+[Frontend guarda JWT (localStorage / memory)]

@@ -1,0 +1,25 @@
+[Frontend: Botón "Login con Google"]
+         |
+         v
+[Backend: /api/auth/google]
+   -> passport.authenticate("google")
+         |
+         v
+[Redirección a Google: Login con cuenta Google]
+         |
+         v
+[Google valida credenciales y redirige a /api/auth/google/callback]
+         |
+         v
+[Backend: passport.authenticate("google", callback)]
+   -> Passport trae el profile de Google
+   -> Busca/crea usuario en DB
+         |
+         v
+[Genera JWT con user.id, email, proveedor]
+         |
+         v
+[Devuelve JWT al frontend]
+         |
+         v
+[Frontend guarda JWT (igual que local)]

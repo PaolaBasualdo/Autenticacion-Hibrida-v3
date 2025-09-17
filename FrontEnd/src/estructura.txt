@@ -1,0 +1,29 @@
+src/
+├── api/
+│   ├── api.js
+│   └── authApi.js      ← Lógica de llamadas a la API de autenticación (login, registro, OAuth)
+├── layouts/
+│   ├── AdminLayout.jsx
+│   └── ECommerceLayout.jsx ← Nuevo layout para el frontend del e-commerce
+├── pages/
+│   ├── admin/
+│   │   └── ...
+│   ├── auth/
+│   │   ├── LoginPage.jsx      ← Página de login con formularios y botones sociales
+│   │   ├── RegisterPage.jsx   ← Página de registro
+│   │   ├── CallbackPage.jsx   ← Página de destino para la redirección de OAuth
+│   │   └── ProtectedRoute.jsx ← Componente para proteger rutas
+│   └── ...
+├── components/
+│   ├── auth/
+│   │   ├── LoginForm.jsx      ← Formulario de login
+│   │   ├── RegisterForm.jsx.jsx ← Formulario de registro
+│   │   └── SocialButtons.jsx  ← Botones "Iniciar con Google/Facebook"
+│   ├── ...
+├── hooks/
+│   ├── useAuth.js      ← Hook personalizado para manejar el estado de autenticación global
+│   └── ...
+├── context/
+│   ├── AuthContext.jsx       ← Estado de autenticación global (usuario, token, isLoggedIn)
+│   ├── NotificationContext.jsx
+└── App.jsx
