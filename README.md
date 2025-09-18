@@ -23,6 +23,7 @@ Full-Stack JS: Registro Local + Social (OAuth 2.0)
   - [Arquitectura y Flujo Técnico](#arquitectura-y-flujo-técnico)
       - [Flujo de Autenticación Local](#flujo-de-autenticación-local)
       - [Flujo de Autenticación OAuth 2.0 (Google)](#flujo-de-autenticación-oAuth-2.0-(Google))
+      - [Autenticación con GitHub (OAuth 2.0 + Passport)](#autenticación-con-github-(oAuth-2.0-+-passport)) 
   - [Estado del proyecto](#estado-del-proyecto)
   - [Funcionalidades](#funcionalidades)
   - [Tecnologías](#tecnologías)
@@ -34,38 +35,69 @@ Full-Stack JS: Registro Local + Social (OAuth 2.0)
 
 ## 📖 Descripción del proyecto
 
-Este proyecto es un **sistema de autenticación híbrido** para una aplicación de comercio electrónico, desarrollado con un enfoque **Full-Stack JavaScript**. La solución integra la autenticación tradicional (email y contraseña) con la moderna autenticación social (OAuth 2.0) a través de Google. La seguridad se gestiona mediante **JSON Web Tokens (JWT)** para proteger las rutas privadas y mantener la persistencia de la sesión de manera segura.
+Este proyecto es un sistema de autenticación híbrido para una aplicación de comercio electrónico, desarrollado con un enfoque Full-Stack JavaScript.
 
-El backend, construido con **Node.js y Express**, gestiona la lógica de autenticación y la API REST. El frontend, desarrollado con **React.js**, interactúa con esta API para ofrecer una experiencia de usuario fluida, protegiendo las rutas según el estado de autenticación.
+Integra tres estrategias de autenticación:
+
+  Local: Registro y login con email/contraseña.
+
+  Google (OAuth 2.0): Inicio de sesión con cuenta de Google.
+
+  GitHub (OAuth 2.0 con Passport.js): Inicio de sesión mediante GitHub con callback y redirección.
+
+La seguridad de las sesiones se gestiona mediante JSON Web Tokens (JWT) para proteger rutas privadas y mantener la persistencia del login.
 
 -----
 
 ## 🏗️ Arquitectura y Flujo Técnico
 
-### Flujo de Autenticación Local
+### 🔑Flujo de Autenticación Local
 
 1.  **Registro de Usuario:** El usuario envía sus datos (nombre, email, contraseña) al endpoint de registro (`/api/auth/register`).
 2.  **Hashing de Contraseña:** El servidor, utilizando `bcryptjs`, hashea la contraseña recibida. Este proceso irreversible asegura que la contraseña nunca se almacene en texto plano en la base de datos.
-3.  **Creación en DB:** Se crea un nuevo registro en la base de datos con los datos del usuario y la contraseña hasheada.
-4.  **Login y Validación:** En el login, el usuario envía su email y contraseña. El servidor busca el usuario por email y utiliza `bcryptjs` para comparar la contraseña proporcionada con la hasheada almacenada.
-5.  **Generación de JWT:** Si la comparación es exitosa, se genera un **JSON Web Token (JWT)**. Este token contiene un `payload` con información no sensible del usuario (ej. `id`, `email`) y está firmado con una clave secreta (`JWT_SECRET`).
-6.  **Respuesta al Cliente:** El servidor envía el JWT al cliente como parte de la respuesta. El frontend lo almacena de forma segura (ej. en `localStorage` o `cookies`).
-7.  **Acceso a Rutas Protegidas:** Para acceder a una ruta protegida, el cliente adjunta el JWT en el encabezado `Authorization` (`Bearer <token>`). El servidor utiliza un **middleware** para validar este token. Si el token es válido y no ha expirado, se permite el acceso a la ruta.
+3.  **Login:** El cliente envía email/contraseña al backend, que valida contra la DB.
+4.  **Generación de JWT:** Si las credenciales son correctas, se crea un JWT con datos básicos del usuario (id, email).
+5.  **Respuesta al Cliente:** El backend devuelve el JWT. El frontend lo guarda en localStorage o cookies.
+6.  **Acceso a Rutas Protegidas:** El cliente envía el JWT en el header Authorization: Bearer <token>. Middleware en el backend valida el token.
 
-### Flujo de Autenticación OAuth 2.0 (Google)
+### 🔑Flujo de Autenticación OAuth 2.0 (Google)
 
-1.  **Inicio de Login:** El usuario hace clic en el botón "Login con Google" en el frontend.
-2.  **Redirección a Google:** El backend inicia el flujo de Passport.js y redirige al usuario a la página de consentimiento de Google.
-3.  **Autorización del Usuario:** El usuario aprueba el acceso de la aplicación a sus datos de perfil.
-4.  **Google Callback:** Google redirige al usuario de vuelta al `callback URL` configurado en el backend, junto con un `código de autorización`.
-5.  **Obtención de Datos del Perfil:** El backend utiliza este código para intercambiarlo por un `access token` y los datos del perfil de Google del usuario.
-6.  **Lógica de Base de Datos:**
-      * Se verifica si el usuario (por su email de Google) ya existe en la base de datos.
-      * Si el usuario **existe**, se genera un JWT para él y se envía de vuelta al cliente.
-      * Si el usuario **no existe**, se crea un nuevo registro en la base de datos utilizando los datos de Google. Luego, se genera y envía un JWT.
-7.  **Finalización del Flujo:** El servidor redirige al usuario al frontend, pasando el JWT para que la aplicación del cliente pueda manejar la sesión.
+1. **Inicio de Login:** El usuario hace clic en "Login con Google".
+2. **Redirección a Google:** Passport redirige al usuario a la página de consentimiento de Google.
+3. **Autorización:** El usuario acepta compartir su información de perfil.
+4. **Callback:** Google redirige al backend con un code de autorización.
+5. **Intercambio de Credenciales:** El backend intercambia ese code por un access token y obtiene los datos del perfil.
+6. **DB + JWT:**
+   Si el usuario existe en DB, se genera un JWT.
+   Si no existe, se crea un registro nuevo y luego se genera el JWT.
+7. **Finalización:** El backend redirige al frontend con el JWT para que el cliente lo almacene y maneje la sesión.
 
 -----
+
+### 🔑Flujo de Autenticación GitHub (OAuth 2.0 con Passport)
+
+1. **Inicio de Login:** El usuario hace clic en "Login con GitHub".
+2. **Redirección a GitHub:** El frontend llama al backend (/auth/github), que redirige al login de GitHub.
+3. **Autorización:** El usuario inicia sesión en GitHub y autoriza la aplicación.
+4. **Callback:** GitHub redirige al backend a /auth/github/callback con un code.
+5. **Intercambio de Código:** Passport intercambia ese code por un access token y obtiene el perfil del usuario.
+6. **DB + Token:**
+   Si el usuario existe en DB → se genera un JWT o cookie de sesión.
+   Si no existe → se crea el usuario y luego se genera el JWT.
+7. **Redirección al Frontend:** El backend redirige al frontend (ej. /dashboard) incluyendo el token.
+8. **Acceso a rutas protegidas:** Igual que en los otros métodos, usando el JWT o cookie de sesión.
+
+------
+
+##💡 Resumen Comparativo
+
+| Estrategia | Flujo                          | Generación del token            | Almacenamiento       | Particularidad                                  |
+| ---------- | ------------------------------ | ------------------------------- | -------------------- | ----------------------------------------------- |
+| **Local**  | Directo (front → back → front) | Backend tras validar DB         | localStorage/cookies | Usuario gestiona credenciales propias           |
+| **Google** | OAuth (redirección a Google)   | Backend tras validar con Google | localStorage/cookies | Usa API de Google                               |
+| **GitHub** | OAuth (redirección + callback) | Backend tras validar con GitHub | localStorage/cookies | Flujo no lineal, depende de Passport + callback |
+
+----
 
 ## 🚧 Estado del proyecto
 
@@ -83,15 +115,12 @@ El backend, construido con **Node.js y Express**, gestiona la lógica de autenti
 
 ## 🔧 Funcionalidades
 
-  * **Autenticación Local:**
-      * Registro de usuarios (nombre, email, contraseña).
-      * Contraseña hasheada con `bcryptjs` para máxima seguridad.
-      * Login con validación de credenciales.
-      * Generación y validación de **JWT** para sesiones seguras.
-  * **Autenticación Social (OAuth 2.0):**
-      * Login con **Google** integrado usando `Passport.js`.
-      * Creación automática de usuario si no existe en la DB.
-      * Manejo de redirecciones y `callbacks` del proveedor.
+  * **Autenticación Local:** Registro, login, bcryptjs, JWT.
+      
+  * **Autenticación Google:** OAuth 2.0, (Google Identity Services — verificación de ID token en backend) creación automática de usuario, JWT.
+
+  * **Autenticación GitHub:** OAuth 2.0 con Passport, redirección y callback, creación/validación en DB.
+      
   * **Gestión de Sesión:**
       * Almacenamiento seguro del JWT en el cliente (ej. `localStorage`).
       * Protección de rutas privadas en el frontend mediante el JWT.
@@ -113,7 +142,7 @@ El backend, construido con **Node.js y Express**, gestiona la lógica de autenti
       * **bcryptjs:** Biblioteca para el hashing de contraseñas.
       * **jsonwebtoken:** Para la creación y validación de JWTs.
       * **`dotenv`:** Gestión de variables de entorno.
-      * **Base de datos:** Relacional (PostgreSQL o MySQL).
+      * **Base de datos:** Relacional  MySQL.
   * **Herramientas**
       * **Git & GitHub:** Control de versiones.
       * **Postman / Insomnia:** Testing de APIs.
@@ -159,11 +188,14 @@ La estructura del backend está organizada de manera modular para facilitar la e
 3.  Crear un archivo `.env` en la raíz del proyecto backend y configurar las variables de entorno necesarias (consulta `.env.example` para referencia):
 
     ```
-    PORT=3000
-    DATABASE_URL=postgres://user:password@host:port/database
-    JWT_SECRET=tu_secreto_para_jwt
-    GOOGLE_CLIENT_ID=tu_id_de_cliente_de_google
-    GOOGLE_CLIENT_SECRET=tu_secreto_de_cliente_de_google
+        PORT=3000
+        DATABASE_URL=postgres://user:password@host:port/database
+        JWT_SECRET=tu_secreto_jwt
+        GOOGLE_CLIENT_ID=tu_google_id
+        GOOGLE_CLIENT_SECRET=tu_google_secret
+        GITHUB_CLIENT_ID=tu_github_id
+        GITHUB_CLIENT_SECRET=tu_github_secret
+
     ```
 
 4.  Configurar la base de datos y correr las migraciones (si aplica).
