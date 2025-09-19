@@ -17,17 +17,45 @@ export const generateTokens = (usuario) => {
 };
 
 // Registro local
+// Registro local
 export const register = async (req, res) => {
   try {
     const { nombre, email, password } = req.body;
-    const usuarioExistente = await Usuario.findOne({ where: { email } });
-    if (usuarioExistente) {
-      return res.status(400).json({ success: false, message: "Email ya registrado" });
+
+    let usuario = await Usuario.findOne({ where: { email } });
+
+    if (usuario) {
+      if (!usuario.password) {
+        // Caso: el usuario existe pero fue creado con un proveedor social
+        usuario.password = password; // se encripta en el hook del modelo
+        usuario.proveedor = "local";
+        if (nombre && !usuario.nombre) usuario.nombre = nombre; // por si vino vacío en Google
+        await usuario.save();
+
+        const tokens = generateTokens(usuario);
+        return res.status(200).json({
+          success: true,
+          message: "Usuario convertido a local exitosamente",
+          data: tokens
+        });
+      } else {
+        // Ya existe con contraseña → error
+        return res.status(400).json({
+          success: false,
+          message: "El email ya está registrado con una contraseña"
+        });
+      }
     }
 
-    const nuevoUsuario = await Usuario.create({ nombre, email, password });
+    // Caso: no existe → crear usuario nuevo
+    usuario = await Usuario.create({
+      nombre,
+      email,
+      password,
+      proveedor: "local"
+    });
 
-    const tokens = generateTokens(nuevoUsuario);
+    const tokens = generateTokens(usuario);
 
     res.status(201).json({
       success: true,
@@ -40,6 +68,7 @@ export const register = async (req, res) => {
   }
 };
 
+
 // Login local
 export const login = async (req, res) => {
   try {
@@ -50,8 +79,13 @@ export const login = async (req, res) => {
     const isValid = await usuario.validarPassword(password);
     if (!isValid) return res.status(401).json({ success: false, message: "Credenciales incorrectas" });
 
-    const tokens = generateTokens(usuario);
+    // Actualizamos el proveedor solo si es distinto
+    if (usuario.proveedor !== "local") {
+      usuario.proveedor = "local";
+      await usuario.save();
+    }
 
+    const tokens = generateTokens(usuario);
     res.json({ success: true, message: "Login exitoso", data: tokens });
   } catch (err) {
     console.error(err);
