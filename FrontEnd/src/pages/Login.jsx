@@ -74,10 +74,14 @@ export default function Login() {
 
         // El backend devuelve los tokens y la info del usuario en res.data.data
         const { accessToken, refreshToken, usuario } = res.data.data;
+        // 👀 Log temporal para verificar tokens y usuario
+console.log("Tokens del backend:", { accessToken, refreshToken, usuario });
+        
 
         // 2. Usar la función 'login' para guardar los tokens y el usuario en el contexto
         //    Esto es clave: el interceptor ahora tendrá el token disponible.
         login(usuario, { accessToken, refreshToken });
+        
 
         // 3. Redirigir al perfil del usuario
         //    Ya no necesitas una petición adicional a /usuarios/perfil.

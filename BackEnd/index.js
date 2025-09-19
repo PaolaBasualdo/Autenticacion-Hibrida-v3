@@ -5,10 +5,8 @@ import dotenv from 'dotenv';
 import sequelize from './src/config/database.js';
 import './src/config/passport.js';
 
-// Importar rutas
-import authRoutes from './src/routes/auth.routes.js';
-import usuarioRoutes from './src/routes/usuario.routes.js';
-import indexRoutes from './src/routes/index.routes.js';
+// Importar el router principal
+import mainRouter from './src/routes/index.routes.js';
 
 dotenv.config();
 
@@ -23,10 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 // Inicializar Passport (solo para OAuth)
 app.use(passport.initialize());
 
-// Rutas
-app.use('/api/auth', authRoutes);
-app.use('/api/usuarios', usuarioRoutes);
-app.use('/', indexRoutes);
+// Montar el router principal bajo el prefijo /api
+app.use('/api', mainRouter);
 
 // Sincronizar base de datos y arrancar servidor
 const startServer = async () => {

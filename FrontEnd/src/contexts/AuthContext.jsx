@@ -1,7 +1,6 @@
 // src/contexts/AuthContext.jsx
 import { createContext, useState, useContext, useEffect } from "react";
 import API from "../api";
-import Cookies from "js-cookie"; // npm install js-cookie
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -11,9 +10,8 @@ export const AuthProvider = ({ children }) => {
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
 
-  // Recuperar sesión guardada en localStorage al iniciar la app
+  // Recupera la sesión guardada en localStorage al montar la app
   useEffect(() => {
-    // 1️⃣ Intentar desde localStorage
     const storedUser = localStorage.getItem("user");
     const storedAccess = localStorage.getItem("accessToken");
     const storedRefresh = localStorage.getItem("refreshToken");
@@ -22,26 +20,8 @@ export const AuthProvider = ({ children }) => {
       setUser(JSON.parse(storedUser));
       setAccessToken(storedAccess);
       setRefreshToken(storedRefresh);
-      return;
     }
-
-    // 2️⃣ Intentar desde cookie (GitHub OAuth)
-    const cookieAccess = Cookies.get("accessToken");
-    if (cookieAccess && !user) {
-      setAccessToken(cookieAccess);
-      // Opcional: podés hacer fetch al backend para obtener info del usuario
-      (async () => {
-        try {
-          const res = await API.get("/usuarios/perfil", {
-            headers: { Authorization: `Bearer ${cookieAccess}` },
-          });
-          setUser(res.data.data);
-        } catch (err) {
-          console.error("No se pudo obtener perfil desde cookie", err);
-        }
-      })();
-    }
-  }, []); // ✅ solo corre al montar
+  }, []); // ✅ Solo corre al montar
 
   // Login: guarda usuario y tokens en estado y localStorage
   const login = (userData, tokens) => {
@@ -60,7 +40,6 @@ export const AuthProvider = ({ children }) => {
     setAccessToken(null);
     setRefreshToken(null);
     localStorage.clear();
-    Cookies.remove("accessToken"); // limpiar cookie de GitHub
   };
 
   // Refrescar token de acceso usando refresh token

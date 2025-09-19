@@ -2,7 +2,7 @@ import Usuario from "../models/Usuario.js";
 import jwt from "jsonwebtoken";
 
 // Generar tokens
-const generateTokens = (usuario) => {
+export const generateTokens = (usuario) => {
   const accessToken = jwt.sign(
     { id: usuario.id },
     process.env.JWT_SECRET,
